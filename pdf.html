@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PhD Thesis · Pitkäranta — PDF</title>
+<meta name="robots" content="noindex,nofollow" />
+<style>
+  :root{--accent:#0f766e;--accent-strong:#115e59;--border:#e5e7eb;--muted:#718096;}
+  *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}
+  body{font-family:"Inter",-apple-system,sans-serif;background:#1e293b;color:#e2e8f0;}
+  #bar{display:flex;align-items:center;gap:12px;padding:8px 14px;background:#0f172a;font-size:13px}
+  #bar a{color:#5eead4;text-decoration:none} #bar .sp{flex:1}
+  #frame{width:100%;height:calc(100% - 40px);border:0;background:#334155}
+  #gate{display:grid;place-items:center;height:100%;padding:24px}
+  .card{background:#fff;color:#1a1f36;max-width:380px;width:100%;border-radius:16px;padding:28px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+  .card h1{font-size:18px;margin-bottom:8px}.card p{font-size:13px;color:#4a5568;margin-bottom:14px;line-height:1.5}
+  .card input{width:100%;font-size:15px;padding:11px 13px;border:1.5px solid var(--border);border-radius:10px;margin-bottom:8px}
+  .card button{width:100%;font-size:14px;font-weight:600;padding:11px;background:var(--accent);color:#fff;border:0;border-radius:10px;cursor:pointer}
+  .card button:hover{background:var(--accent-strong)} .err{color:#b91c1c;font-size:12.5px;min-height:1em}
+  #status{padding:20px;font-size:14px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="bar" hidden><strong id="title">PDF</strong><span class="sp"></span><a id="dl" download>Download</a></div>
+<div id="status">Loading…</div>
+<iframe id="frame" hidden title="PDF"></iframe>
+<div id="gate" hidden>
+  <div class="card">
+    <h1>Locked PDF</h1>
+    <p>Enter the access password to decrypt and view this document in your browser.</p>
+    <form id="gf"><input id="gpw" type="password" placeholder="Access password" autofocus /><button type="submit">Unlock</button><div class="err" id="gerr">&nbsp;</div></form>
+  </div>
+</div>
+<script>
+(() => {
+  const STORE_KEY = "phd-tapio:auth-v1";
+  const TTL_MS = 24*60*60*1000, ITER = 600000;
+  const te = new TextEncoder();
+  const qs = new URLSearchParams(location.search);
+  const idx = qs.get('f'); const name = qs.get('n') || ('document-' + idx + '.pdf');
+  const statusEl = document.getElementById('status');
+  function getStored(){ try{ const o=JSON.parse(localStorage.getItem(STORE_KEY)); if(!o||typeof o.p!=='string'||typeof o.t!=='number') return null; if(Date.now()-o.t>TTL_MS){localStorage.removeItem(STORE_KEY);return null;} return o.p; }catch(e){return null;} }
+  function setStored(pw){ try{ localStorage.setItem(STORE_KEY, JSON.stringify({p:pw,t:Date.now()})); }catch(e){} }
+  async function deriveKey(pw, salt){
+    const bk = await crypto.subtle.importKey('raw', te.encode(pw), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:ITER,hash:'SHA-256'}, bk, {name:'AES-GCM',length:256}, false, ['decrypt']);
+  }
+  let blobBytes = null;
+  async function fetchEnc(){
+    if (blobBytes) return blobBytes;
+    const r = await fetch('enc/p' + idx + '.enc');
+    if (!r.ok) throw new Error('fetch ' + r.status);
+    blobBytes = new Uint8Array(await r.arrayBuffer());
+    return blobBytes;
+  }
+  async function decryptAndShow(pw){
+    statusEl.hidden = false; statusEl.textContent = 'Decrypting ' + name + ' …';
+    const buf = await fetchEnc();
+    const salt = buf.slice(0,16), iv = buf.slice(16,28), ct = buf.slice(28);
+    const key = await deriveKey(pw, salt);
+    const pt = await crypto.subtle.decrypt({name:'AES-GCM',iv}, key, ct);
+    const url = URL.createObjectURL(new Blob([pt], {type:'application/pdf'}));
+    document.title = name;
+    document.getElementById('title').textContent = name;
+    const dl = document.getElementById('dl'); dl.href = url; dl.download = name;
+    const fr = document.getElementById('frame'); fr.src = url;
+    document.getElementById('bar').hidden = false; fr.hidden = false;
+    statusEl.hidden = true; document.getElementById('gate').hidden = true;
+  }
+  function showGate(msg){
+    document.getElementById('gate').hidden = false; statusEl.hidden = true;
+    if (msg) document.getElementById('gerr').textContent = msg;
+  }
+  if (idx === null) { statusEl.textContent = 'No document specified.'; return; }
+  const stored = getStored();
+  (stored ? decryptAndShow(stored).catch(()=>showGate('')) : Promise.resolve(showGate('')));
+  document.getElementById('gf').addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    const pw = document.getElementById('gpw').value;
+    try{ await decryptAndShow(pw); setStored(pw); }
+    catch(e){ showGate('Wrong password.'); document.getElementById('gpw').select(); }
+  });
+})();
+</script>
+</body>
+</html>
