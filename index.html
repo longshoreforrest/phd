@@ -6,8 +6,8 @@
 <title>Tapio Pitkäranta — Väitöskirja</title>
 <meta name="description" content="Tapio Pitkärannan väitöskirja selattavana. Voit valita tekstiä ja jättää kommentin." />
 <link rel="preconnect" href="https://accounts.google.com" />
-<link rel="stylesheet" href="./reader.css?v=20260827-1858" />
-<script src="./config.js?v=20260827-1858"></script>
+<link rel="stylesheet" href="./reader.css?v=20260827-1923" />
+<script src="./config.js?v=20260827-1923"></script>
 <script>
   // MyPublicAnalytics beacon bootstrap (site='phd'). The beacon sends the
   // pageview; activity.js adds every reader action on top of it.
@@ -37,6 +37,7 @@
     <button class="btn" id="zin" title="Lähennä (⌘/Ctrl +)">+</button>
   </div>
   <button class="btn" id="srchBtn" title="Hae tekstistä (⌘/Ctrl F)">🔍</button>
+  <button class="btn" id="ownerBtn" title="Kaikkien lukijoiden kommentit (vain omistaja)" style="display:none">🗂 Kommentit <span id="ownerN" class="n">0</span></button>
   <button class="btn primary" id="cmtPage" title="Kommentoi nykyistä sivua">💬 Kommentoi sivua</button>
   <div id="who" style="display:none"></div>
   <div id="gbtn"></div>
@@ -52,6 +53,19 @@
     <button class="btn" id="srchClose" title="Sulje (Esc)">✕</button>
   </div>
   <div id="srchList"></div>
+</div>
+
+<!-- owner-only: all readers' comments -->
+<div id="owner" role="region" aria-label="Kaikki kommentit">
+  <div class="row">
+    <strong>Kaikki kommentit</strong>
+    <span id="ownerCount" class="cnt"></span>
+    <input id="ownerFilter" type="search" placeholder="Suodata: nimi, teksti, s. 19…" autocomplete="off" aria-label="Suodata kommentteja" />
+    <button class="btn" id="ownerReload" title="Päivitä">↻</button>
+    <button class="btn" id="ownerClose" title="Sulje (Esc)">✕</button>
+  </div>
+  <div id="ownerStatus" class="status"></div>
+  <div id="ownerList"></div>
 </div>
 
 <div id="stage">
@@ -91,6 +105,6 @@
 
 <div id="toast">&nbsp;</div>
 
-<script type="module" src="./reader.js?v=20260827-1858"></script>
+<script type="module" src="./reader.js?v=20260827-1923"></script>
 </body>
 </html>

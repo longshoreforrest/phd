@@ -537,3 +537,4 @@ import('./auth.js' + V).then((m) => m.initAuth(CFG)).catch((e) => console.warn('
 import('./comments.js' + V).then((m) => m.initComments(Reader, CFG)).catch((e) => console.warn('comments init', e));
 import('./search.js' + V).then((m) => { Reader.search = m.initSearch(Reader); }).catch((e) => console.warn('search init', e));
 import('./activity.js' + V).then((m) => m.initActivity(Reader, CFG)).catch((e) => console.warn('activity init', e));
+import('./owner.js' + V).then((m) => { Reader.owner = m.initOwner(Reader, CFG); }).catch((e) => console.warn('owner init', e));

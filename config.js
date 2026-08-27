@@ -32,6 +32,11 @@ window.PHD_VIEWER_CONFIG = {
   googleClientId: '605639423178-s3pu2m6mkf9r50u69709u0mhchf0ha97.apps.googleusercontent.com',
   identityKey: 'unitas:identity', // shared localStorage key (same as MyPA beacon)
   requireSignIn: true,            // must be signed in to submit a comment
+  // Owner view: these Google accounts see EVERY reader's comment inside the
+  // reader (💬-button with a counter, list + markers on the pages). The Worker
+  // enforces the same allowlist (FEEDBACK_OWNERS) for site='phd'.
+  ownerEmails: ['longshoreforrest@gmail.com'],
+  feedbackEndpoint: 'https://mypa.longshoreforrest.workers.dev/feedback',
 
   // ---- Voice ----
   dictationLang: 'fi-FI',         // Web Speech API dictation language
@@ -42,5 +47,5 @@ window.PHD_VIEWER_CONFIG = {
   audioEndpoint: '',
 
   // Local build/version stamp (publish script overwrites this).
-  buildVersion: '20260827-1858',
+  buildVersion: '20260827-1923',
 };
