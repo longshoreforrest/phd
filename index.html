@@ -6,8 +6,19 @@
 <title>Tapio Pitkäranta — Väitöskirja</title>
 <meta name="description" content="Tapio Pitkärannan väitöskirja selattavana. Voit valita tekstiä ja jättää kommentin." />
 <link rel="preconnect" href="https://accounts.google.com" />
-<link rel="stylesheet" href="./reader.css?v=20260827-1813" />
-<script src="./config.js?v=20260827-1813"></script>
+<link rel="stylesheet" href="./reader.css?v=20260827-1858" />
+<script src="./config.js?v=20260827-1858"></script>
+<script>
+  // MyPublicAnalytics beacon bootstrap (site='phd'). The beacon sends the
+  // pageview; activity.js adds every reader action on top of it.
+  (function (c) { if (!c || c.analytics === false) return;
+    window.__MYPA_SITE__ = c.site || 'phd';
+    window.__MYPA_ENDPOINT__ = c.collectEndpoint || '';
+    window.__MYPA_IDENTITY_KEY__ = c.identityKey || 'unitas:identity';
+    window.__MYPA_EXTRA__ = { v: c.buildVersion || 'dev' };
+  })(window.PHD_VIEWER_CONFIG);
+</script>
+<script src="./vendor/mypa/analytics.js" defer></script>
 </head>
 <body>
 
@@ -80,6 +91,6 @@
 
 <div id="toast">&nbsp;</div>
 
-<script type="module" src="./reader.js?v=20260827-1813"></script>
+<script type="module" src="./reader.js?v=20260827-1858"></script>
 </body>
 </html>

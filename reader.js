@@ -41,6 +41,7 @@ const state = {
   paintedCbs: [],             // cb(n, el, hlEl) after a page's text layer is ready
   back: [],                   // scroll positions before followed links (Alt+← / "back")
   destCache: new Map(),       // named destination -> resolved {page, top}
+  listeners: {},              // event bus (Reader.on / Reader.emit)
 };
 
 /* ---------------- public API ---------------- */
@@ -57,6 +58,9 @@ const Reader = {
   get zoom() { return state.zoom; },
   get pdf() { return state.pdf; },
   scrollToFraction,
+  // tiny event bus: Reader.on('zoom', cb) / Reader.emit('zoom', {...}) — used by activity.js
+  on(name, cb) { (state.listeners[name] = state.listeners[name] || []).push(cb); },
+  emit(name, data) { for (const cb of state.listeners[name] || []) { try { cb(data || {}); } catch (_) {} } },
   onPainted: (cb) => { state.paintedCbs.push(cb); },
   // page number a DOM node lives in (walk up to the .page element), or 0
   pageOfNode(node) {
@@ -229,11 +233,12 @@ async function addLinkLayer(rec, page, vp) {
     const el = document.createElement('a');
     if (a.url) {
       el.href = a.url; el.target = '_blank'; el.rel = 'noopener'; el.title = a.url;
+      el.addEventListener('click', () => Reader.emit('link', { kind: 'external', page: Number(rec.el.dataset.n), href: String(a.url).slice(0, 300) }));
     } else {
       const dest = a.dest;
       el.href = '#'; el.className = 'internal';
       el.title = typeof dest === 'string' ? dest.replace(/^(section|subsection|subsubsection|chapter|figure|table|cite|equation|Hfootnote|page)\./, '') : 'Siirry';
-      el.addEventListener('click', (ev) => { ev.preventDefault(); goToDest(dest); });
+      el.addEventListener('click', (ev) => { ev.preventDefault(); goToDest(dest, Number(rec.el.dataset.n)); });
     }
     el.style.left = Math.min(x1, x2) + 'px';
     el.style.top = Math.min(y1, y2) + 'px';
@@ -274,9 +279,10 @@ async function resolveDest(dest) {
   return out;
 }
 
-async function goToDest(dest) {
+async function goToDest(dest, fromPage) {
   const d = await resolveDest(dest);
   if (!d) return;
+  Reader.emit('link', { kind: 'internal', page: fromPage || state.cur, to: d.page });
   pushBack();
   const rec = state.recs.get(d.page);
   if (!rec) return;
@@ -313,6 +319,7 @@ function goBack() {
   const b = state.back.pop();
   updateBackBtn();
   if (!b) return;
+  Reader.emit('back', { from: state.cur });
   if (b.zoom !== state.zoom) { setZoom(b.zoom, { keepView: false }); }
   requestAnimationFrame(() => stage.scrollTo({ top: b.top, left: b.left, behavior: 'smooth' }));
 }
@@ -355,16 +362,19 @@ function updateCur() {
     if (d < bestD) { bestD = d; best = n; }
   }
   if (best !== state.cur) {
+    const from = state.cur;
     state.cur = best;
     if (document.activeElement !== pageInput) pageInput.value = String(best);
     history.replaceState(null, '', '#p=' + best);
+    Reader.emit('page', { page: best, from });
   }
 }
 
-function goToPage(n) {
+function goToPage(n, method) {
   n = Math.max(1, Math.min(state.n, n | 0));
   const rec = state.recs.get(n);
   if (!rec) return;
+  if (method) Reader.emit('nav', { method, page: n, from: state.cur });
   render(n);
   stage.scrollTo({ top: rec.el.offsetTop - 12, behavior: 'smooth' });
   state.cur = n; pageInput.value = String(n);
@@ -372,7 +382,7 @@ function goToPage(n) {
 
 function applyHash() {
   const m = /(?:^|[#&])p=(\d+)/.exec(location.hash);
-  if (m) goToPage(Number(m[1]));
+  if (m) goToPage(Number(m[1]), 'hash');
 }
 
 function setupNav() {
@@ -381,12 +391,12 @@ function setupNav() {
     if (raf) return; raf = requestAnimationFrame(() => { raf = 0; updateCur(); });
   }, { passive: true });
 
-  document.getElementById('prev').onclick = () => goToPage(state.cur - 1);
-  document.getElementById('next').onclick = () => goToPage(state.cur + 1);
-  pageInput.addEventListener('change', () => goToPage(Number(pageInput.value)));
-  document.getElementById('zin').onclick = () => setZoom(state.zoom * 1.2);
-  document.getElementById('zout').onclick = () => setZoom(state.zoom / 1.2);
-  document.getElementById('zfit').onclick = () => setZoom(1);
+  document.getElementById('prev').onclick = () => goToPage(state.cur - 1, 'prev');
+  document.getElementById('next').onclick = () => goToPage(state.cur + 1, 'next');
+  pageInput.addEventListener('change', () => goToPage(Number(pageInput.value), 'input'));
+  document.getElementById('zin').onclick = () => setZoom(state.zoom * 1.2, { method: 'button' });
+  document.getElementById('zout').onclick = () => setZoom(state.zoom / 1.2, { method: 'button' });
+  document.getElementById('zfit').onclick = () => setZoom(1, { method: 'fit' });
   const backBtn = document.getElementById('back');
   if (backBtn) backBtn.onclick = goBack;
   updateBackBtn(); updateZoomLabel();
@@ -394,19 +404,19 @@ function setupNav() {
   // Window resize (orientation change, sidebar…) → refit. Browser-level zoom
   // (⌘/Ctrl +/−) is intercepted below so it does NOT end up here.
   let rt = 0;
-  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => setZoom(state.zoom), 200); });
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => setZoom(state.zoom, { method: 'resize' }), 200); });
 
   window.addEventListener('keydown', (e) => {
     const mod = e.metaKey || e.ctrlKey;
     // ⌘/Ctrl + / − / 0 → document zoom (instead of browser zoom, which the
     // fit-to-width layout would immediately cancel out).
-    if (mod && !e.altKey && (e.key === '+' || e.key === '=' || e.key === 'Add')) { e.preventDefault(); setZoom(state.zoom * 1.2); return; }
-    if (mod && !e.altKey && (e.key === '-' || e.key === '_' || e.key === 'Subtract')) { e.preventDefault(); setZoom(state.zoom / 1.2); return; }
-    if (mod && !e.altKey && e.key === '0') { e.preventDefault(); setZoom(1); return; }
+    if (mod && !e.altKey && (e.key === '+' || e.key === '=' || e.key === 'Add')) { e.preventDefault(); setZoom(state.zoom * 1.2, { method: 'keyboard' }); return; }
+    if (mod && !e.altKey && (e.key === '-' || e.key === '_' || e.key === 'Subtract')) { e.preventDefault(); setZoom(state.zoom / 1.2, { method: 'keyboard' }); return; }
+    if (mod && !e.altKey && e.key === '0') { e.preventDefault(); setZoom(1, { method: 'keyboard' }); return; }
     if (/input|textarea|select/i.test(e.target.tagName)) return;
     if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); goBack(); return; }
-    if (e.key === 'ArrowRight' || e.key === 'PageDown') { goToPage(state.cur + 1); e.preventDefault(); }
-    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { goToPage(state.cur - 1); e.preventDefault(); }
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { goToPage(state.cur + 1, 'key'); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { goToPage(state.cur - 1, 'key'); e.preventDefault(); }
   });
 
   // Ctrl+wheel / trackpad pinch (Chrome, Safari, Firefox report pinch as a
@@ -416,13 +426,14 @@ function setupNav() {
     if (!(e.ctrlKey || e.metaKey)) return;
     e.preventDefault();
     const factor = Math.exp(-e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.0025));
+    preview.method = 'wheel';
     previewZoom(clampZoom(previewTarget() * factor), e.clientX, e.clientY);
   }, { passive: false });
 
   // Safari desktop pinch (gesture events) — prevent page zoom, use ours.
   let gestureStart = 1;
   stage.addEventListener('gesturestart', (e) => { e.preventDefault(); gestureStart = previewTarget(); }, { passive: false });
-  stage.addEventListener('gesturechange', (e) => { e.preventDefault(); previewZoom(clampZoom(gestureStart * e.scale), e.clientX, e.clientY); }, { passive: false });
+  stage.addEventListener('gesturechange', (e) => { e.preventDefault(); preview.method = 'pinch'; previewZoom(clampZoom(gestureStart * e.scale), e.clientX, e.clientY); }, { passive: false });
   stage.addEventListener('gestureend', (e) => { e.preventDefault(); commitPreview(); }, { passive: false });
 
   // Touch pinch (phones / tablets).
@@ -436,6 +447,7 @@ function setupNav() {
     if (!pinch || e.touches.length !== 2) return;
     e.preventDefault();
     const d = touchDist(e);
+    preview.method = 'pinch';
     previewZoom(clampZoom(pinch.z * (d / pinch.d)), pinch.cx, pinch.cy);
   }, { passive: false });
   const endPinch = () => { if (pinch) { pinch = null; commitPreview(); } };
@@ -460,7 +472,7 @@ function updateZoomLabel() {
 
 // Preview zoom: scale the already-rendered pages with a CSS transform during a
 // continuous gesture (cheap), then commit with a real re-render when it ends.
-const preview = { z: null, timer: 0, ax: 0, ay: 0 };
+const preview = { z: null, timer: 0, ax: 0, ay: 0, method: 'wheel' };
 function previewTarget() { return preview.z == null ? state.zoom : preview.z; }
 function previewZoom(z, clientX, clientY) {
   preview.z = z;
@@ -487,7 +499,7 @@ function commitPreview() {
   const z = preview.z, ax = preview.ax, ay = preview.ay;
   preview.z = null; preview.origin = null;
   pagesEl.style.transform = ''; pagesEl.style.marginLeft = '';
-  setZoom(z, { anchorX: ax, anchorY: ay, fromPreview: true });
+  setZoom(z, { anchorX: ax, anchorY: ay, fromPreview: true, method: preview.method });
 }
 
 /* setZoom: re-lay out at a new zoom while keeping the document point that was
@@ -509,6 +521,9 @@ function setZoom(z, opts = {}) {
   state.zoom = newZoom;
   relayoutRerender();
   updateZoomLabel();
+  if (opts.method && opts.method !== 'resize' && Math.abs(newZoom - prevZoom) > 1e-6) {
+    Reader.emit('zoom', { zoom: Math.round(newZoom * 100) / 100, from: Math.round(prevZoom * 100) / 100, method: opts.method, page: state.cur });
+  }
   if (opts.keepView === false) return;
   const newW = pagesEl.offsetWidth || 1, newH = pagesEl.scrollHeight || 1;
   stage.scrollTop = fy * newH - ay;
@@ -521,3 +536,4 @@ const V = CFG.buildVersion && CFG.buildVersion !== 'dev' ? '?v=' + encodeURIComp
 import('./auth.js' + V).then((m) => m.initAuth(CFG)).catch((e) => console.warn('auth init', e));
 import('./comments.js' + V).then((m) => m.initComments(Reader, CFG)).catch((e) => console.warn('comments init', e));
 import('./search.js' + V).then((m) => { Reader.search = m.initSearch(Reader); }).catch((e) => console.warn('search init', e));
+import('./activity.js' + V).then((m) => m.initActivity(Reader, CFG)).catch((e) => console.warn('activity init', e));

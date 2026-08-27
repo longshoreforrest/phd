@@ -109,6 +109,7 @@ export function initSearch(R) {
     }
     renderList(pages);
     repaintAll();
+    R.emit('search', { q: q.slice(0, 120), hits: total, page: R.currentPage() });
     if (total) go(0, true); else ui.count.textContent = 'Ei osumia';
   }
   function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
@@ -158,6 +159,7 @@ export function initSearch(R) {
     st.cur = ((i % st.matches.length) + st.matches.length) % st.matches.length;
     const m = st.matches[st.cur];
     ui.count.textContent = (st.cur + 1) + ' / ' + st.matches.length;
+    if (!first) R.emit('search_nav', { q: st.q.slice(0, 120), i: st.cur + 1, of: st.matches.length, page: m.page });
     // scroll: put the match ~1/3 down the viewport
     const fy = m.rects.length ? m.rects[0].fy : 0;
     R.scrollToFraction(m.page, fy, first ? 'auto' : 'smooth');
@@ -209,8 +211,8 @@ export function initSearch(R) {
         else if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); go(st.cur - 1); }
       }
     });
-    function show() { u.open = true; box.classList.add('show'); btn.classList.add('on'); u.input.focus(); u.input.select(); if (!idx.pages) buildIndex(); }
-    function hide() { u.open = false; box.classList.remove('show'); btn.classList.remove('on'); st.q = ''; st.matches = []; st.byPage = new Map(); st.cur = -1; ui.list.innerHTML = ''; ui.count.textContent = ''; repaintAll(); }
+    function show() { if (!u.open) R.emit('search_open', { page: R.currentPage() }); u.open = true; box.classList.add('show'); btn.classList.add('on'); u.input.focus(); u.input.select(); if (!idx.pages) buildIndex(); }
+    function hide() { if (u.open) R.emit('search_close', { q: st.q.slice(0, 120), hits: st.matches.length, page: R.currentPage() }); u.open = false; box.classList.remove('show'); btn.classList.remove('on'); st.q = ''; st.matches = []; st.byPage = new Map(); st.cur = -1; ui.list.innerHTML = ''; ui.count.textContent = ''; repaintAll(); }
     u.show = show; u.hide = hide;
     return u;
   }

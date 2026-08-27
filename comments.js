@@ -111,6 +111,8 @@ function openComposer(kind) {
   c.classList.add('show');
   positionComposer();
   refreshAuthState();
+  composerSent = false;
+  R.emit('comment_open', { kind, page: sel ? sel.page : R.currentPage(), quote_len: (kind === 'selection' && sel) ? sel.quote.length : 0 });
   setTimeout(() => document.getElementById('cmtText').focus(), 30);
 }
 function positionComposer() {
@@ -119,9 +121,12 @@ function positionComposer() {
   c.style.top = Math.max(64, Math.round(window.innerHeight * 0.16)) + 'px';
   c.style.left = Math.round(Math.min(window.innerWidth - c.offsetWidth - 16, window.innerWidth * 0.52)) + 'px';
 }
+let composerSent = false;
 function closeComposer() {
   stopDictation(); stopRecording(true);
-  document.getElementById('composer').classList.remove('show');
+  const c = document.getElementById('composer');
+  if (c.classList.contains('show') && !composerSent) R.emit('comment_cancel', { page: sel ? sel.page : R.currentPage(), kind: sel ? sel.kind : 'page', typed: document.getElementById('cmtText').value.trim().length });
+  c.classList.remove('show');
   sel = null;
 }
 
@@ -142,6 +147,7 @@ function startDictation() {
   const mic = document.getElementById('cmtMic');
   const ind = document.getElementById('dictindicator');
   if (!SR) { toast('Selain ei tue sanelua. Kokeile Chromea tai Safaria.', true); return; }
+  R.emit('voice', { mode: 'dictation', page: sel ? sel.page : R.currentPage() });
   recog = new SR();
   recog.lang = CFG.dictationLang || 'fi-FI';
   recog.interimResults = true; recog.continuous = true;
@@ -169,6 +175,7 @@ function stopDictation() { if (recog && recognizing) { try { recog.stop(); } cat
 function toggleRecording() { mediaRec && mediaRec.state === 'recording' ? stopRecording(false) : startRecording(); }
 async function startRecording() {
   if (!CFG.audioEndpoint) { toast('Äänitallennus otetaan käyttöön pian.', true); return; }
+  R.emit('voice', { mode: 'recording', page: sel ? sel.page : R.currentPage() });
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     chunks = []; mediaRec = new MediaRecorder(stream);
@@ -228,6 +235,8 @@ async function submit() {
     if (!resp.ok && resp.status !== 204 && resp.status !== 0) throw new Error('HTTP ' + resp.status);
     saveMine(extra);
     if (sel && sel.kind === 'selection' && R.isRendered(sel.page)) paintMine(sel.page, R.hlLayer(sel.page));
+    composerSent = true;
+    R.emit('comment_sent', { kind: extra.kind, page: extra.page, category, len: message.length, audio: !!audioUrl });
     toast('Kiitos! Kommentti tallennettu.');
     closeComposer();
   } catch (e) {

@@ -19,6 +19,10 @@ window.PHD_VIEWER_CONFIG = {
   // MyPA dashboard filtered to site='phd'); they never render on this page.
   site: 'phd',
   collectEndpoint: 'https://mypa.longshoreforrest.workers.dev/collect',
+  // Behaviour analytics (MyPublicAnalytics beacon + activity.js): pageview,
+  // page dwell, links, search, zoom, comments, sign-in, heartbeat,
+  // engagement_end. Same site/endpoint as feedback. Set false to disable.
+  analytics: true,
 
   // ---- Google Sign-In (Google Identity Services) ----
   // Reuse the client id the MyPA Worker already verifies against, so tokens land
@@ -38,5 +42,5 @@ window.PHD_VIEWER_CONFIG = {
   audioEndpoint: '',
 
   // Local build/version stamp (publish script overwrites this).
-  buildVersion: '20260827-1813',
+  buildVersion: '20260827-1858',
 };
