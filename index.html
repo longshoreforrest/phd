@@ -2,7 +2,7 @@
 <html lang="fi">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Tapio Pitkäranta — Väitöskirja</title>
 <meta name="description" content="Tapio Pitkärannan väitöskirja selattavana. Voit valita tekstiä ja jättää kommentin." />
 <link rel="preconnect" href="https://accounts.google.com" />
@@ -19,10 +19,11 @@
     <span id="pageTotal">/ …</span>
     <button class="btn" id="next" title="Seuraava sivu">›</button>
   </div>
-  <div class="grp hide-sm">
-    <button class="btn" id="zout" title="Loitonna">−</button>
-    <button class="btn" id="zfit" title="Sovita leveyteen">⤢</button>
-    <button class="btn" id="zin" title="Lähennä">+</button>
+  <div class="grp" id="zoomGrp">
+    <button class="btn" id="back" title="Takaisin (Alt+←) — palaa kohtaan josta seurasit linkkiä" disabled>↩</button>
+    <button class="btn" id="zout" title="Loitonna (⌘/Ctrl −)">−</button>
+    <button class="btn zlabel" id="zfit" title="Sovita leveyteen (⌘/Ctrl 0)"><span id="zlabel">100 %</span></button>
+    <button class="btn" id="zin" title="Lähennä (⌘/Ctrl +)">+</button>
   </div>
   <button class="btn primary" id="cmtPage" title="Kommentoi nykyistä sivua">💬 Kommentoi sivua</button>
   <div id="who" style="display:none"></div>

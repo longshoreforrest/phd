@@ -39,6 +39,8 @@ const state = {
   order: [],                  // MRU list of rendered page numbers
   observer: null,
   paintedCbs: [],             // cb(n, el, hlEl) after a page's text layer is ready
+  back: [],                   // scroll positions before followed links (Alt+← / "back")
+  destCache: new Map(),       // named destination -> resolved {page, top}
 };
 
 /* ---------------- public API ---------------- */
@@ -49,6 +51,10 @@ const Reader = {
   get pageEl() { return (n) => state.recs.get(n)?.el || null; },
   currentPage: () => state.cur,
   goToPage,
+  goToDest,
+  goBack,
+  setZoom,
+  get zoom() { return state.zoom; },
   onPainted: (cb) => { state.paintedCbs.push(cb); },
   // page number a DOM node lives in (walk up to the .page element), or 0
   pageOfNode(node) {
@@ -208,7 +214,9 @@ async function addTextLayer(rec, page, vp) {
 async function addLinkLayer(rec, page, vp) {
   let anns = [];
   try { anns = await page.getAnnotations({ intent: 'display' }); } catch (_) { return; }
-  const links = anns.filter((a) => a.subtype === 'Link' && a.url);
+  // External (URL) links AND internal links (named / explicit destinations —
+  // the table of contents, cross-references, citations, footnotes).
+  const links = anns.filter((a) => a.subtype === 'Link' && (a.url || a.dest || (a.action && /GoTo/i.test(a.action))));
   if (!links.length) return;
   const layer = document.createElement('div'); layer.className = 'linklayer';
   for (const a of links) {
@@ -216,7 +224,14 @@ async function addLinkLayer(rec, page, vp) {
     const [x1, y1] = vp.convertToViewportPoint(r[0], r[1]);
     const [x2, y2] = vp.convertToViewportPoint(r[2], r[3]);
     const el = document.createElement('a');
-    el.href = a.url; el.target = '_blank'; el.rel = 'noopener';
+    if (a.url) {
+      el.href = a.url; el.target = '_blank'; el.rel = 'noopener'; el.title = a.url;
+    } else {
+      const dest = a.dest;
+      el.href = '#'; el.className = 'internal';
+      el.title = typeof dest === 'string' ? dest.replace(/^(section|subsection|subsubsection|chapter|figure|table|cite|equation|Hfootnote|page)\./, '') : 'Siirry';
+      el.addEventListener('click', (ev) => { ev.preventDefault(); goToDest(dest); });
+    }
     el.style.left = Math.min(x1, x2) + 'px';
     el.style.top = Math.min(y1, y2) + 'px';
     el.style.width = Math.abs(x2 - x1) + 'px';
@@ -225,6 +240,71 @@ async function addLinkLayer(rec, page, vp) {
   }
   rec.el.appendChild(layer);
   rec.link = layer;
+}
+
+/* Resolve a pdf.js destination (name string or explicit array) to
+ * { page (1-based), top (PDF units from the page bottom, or null) }. */
+async function resolveDest(dest) {
+  if (!dest) return null;
+  const key = typeof dest === 'string' ? dest : null;
+  if (key && state.destCache.has(key)) return state.destCache.get(key);
+  let arr = dest;
+  if (typeof dest === 'string') {
+    try { arr = await state.pdf.getDestination(dest); } catch (_) { arr = null; }
+  }
+  if (!Array.isArray(arr) || !arr.length) return null;
+  let page = 0;
+  const ref = arr[0];
+  try {
+    if (typeof ref === 'number') page = ref + 1;                  // page index (rare)
+    else if (ref && typeof ref === 'object') page = (await state.pdf.getPageIndex(ref)) + 1;
+  } catch (_) { page = 0; }
+  if (!page) return null;
+  // /XYZ left top zoom | /FitH top | /FitBH top | /Fit | /FitV left ...
+  const kind = arr[1] && arr[1].name ? arr[1].name : String(arr[1] || '');
+  let top = null;
+  if (kind === 'XYZ') top = typeof arr[3] === 'number' ? arr[3] : null;
+  else if (kind === 'FitH' || kind === 'FitBH') top = typeof arr[2] === 'number' ? arr[2] : null;
+  else if (kind === 'FitR') top = typeof arr[5] === 'number' ? arr[5] : null;
+  const out = { page, top };
+  if (key) state.destCache.set(key, out);
+  return out;
+}
+
+async function goToDest(dest) {
+  const d = await resolveDest(dest);
+  if (!d) return;
+  pushBack();
+  const rec = state.recs.get(d.page);
+  if (!rec) return;
+  render(d.page);
+  // Convert the PDF-space "top" (from the page bottom) into CSS px from the page top.
+  let y = 0;
+  if (typeof d.top === 'number') {
+    const pageH = rec.el.offsetHeight || state.base.h * state.scale;
+    const unitsH = state.base.h; // thesis pages are uniform; good enough for a scroll target
+    y = Math.max(0, Math.min(pageH, (unitsH - d.top) * (pageH / unitsH)));
+  }
+  stage.scrollTo({ top: rec.el.offsetTop + y - 12, behavior: 'smooth' });
+  state.cur = d.page; pageInput.value = String(d.page);
+  history.replaceState(null, '', '#p=' + d.page);
+}
+
+function pushBack() {
+  state.back.push({ top: stage.scrollTop, left: stage.scrollLeft, zoom: state.zoom });
+  if (state.back.length > 50) state.back.shift();
+  updateBackBtn();
+}
+function goBack() {
+  const b = state.back.pop();
+  updateBackBtn();
+  if (!b) return;
+  if (b.zoom !== state.zoom) { setZoom(b.zoom, { keepView: false }); }
+  requestAnimationFrame(() => stage.scrollTo({ top: b.top, left: b.left, behavior: 'smooth' }));
+}
+function updateBackBtn() {
+  const b = document.getElementById('back');
+  if (b) b.disabled = !state.back.length;
 }
 
 function touch(n) {
@@ -290,25 +370,136 @@ function setupNav() {
   document.getElementById('prev').onclick = () => goToPage(state.cur - 1);
   document.getElementById('next').onclick = () => goToPage(state.cur + 1);
   pageInput.addEventListener('change', () => goToPage(Number(pageInput.value)));
-  document.getElementById('zin').onclick = () => setZoom(state.zoom * 1.15);
-  document.getElementById('zout').onclick = () => setZoom(state.zoom / 1.15);
+  document.getElementById('zin').onclick = () => setZoom(state.zoom * 1.2);
+  document.getElementById('zout').onclick = () => setZoom(state.zoom / 1.2);
   document.getElementById('zfit').onclick = () => setZoom(1);
+  const backBtn = document.getElementById('back');
+  if (backBtn) backBtn.onclick = goBack;
+  updateBackBtn(); updateZoomLabel();
 
+  // Window resize (orientation change, sidebar…) → refit. Browser-level zoom
+  // (⌘/Ctrl +/−) is intercepted below so it does NOT end up here.
   let rt = 0;
-  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(relayoutRerender, 200); });
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => setZoom(state.zoom), 200); });
 
   window.addEventListener('keydown', (e) => {
-    if (/input|textarea/i.test(e.target.tagName)) return;
+    const mod = e.metaKey || e.ctrlKey;
+    // ⌘/Ctrl + / − / 0 → document zoom (instead of browser zoom, which the
+    // fit-to-width layout would immediately cancel out).
+    if (mod && !e.altKey && (e.key === '+' || e.key === '=' || e.key === 'Add')) { e.preventDefault(); setZoom(state.zoom * 1.2); return; }
+    if (mod && !e.altKey && (e.key === '-' || e.key === '_' || e.key === 'Subtract')) { e.preventDefault(); setZoom(state.zoom / 1.2); return; }
+    if (mod && !e.altKey && e.key === '0') { e.preventDefault(); setZoom(1); return; }
+    if (/input|textarea|select/i.test(e.target.tagName)) return;
+    if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); goBack(); return; }
     if (e.key === 'ArrowRight' || e.key === 'PageDown') { goToPage(state.cur + 1); e.preventDefault(); }
     else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { goToPage(state.cur - 1); e.preventDefault(); }
   });
+
+  // Ctrl+wheel / trackpad pinch (Chrome, Safari, Firefox report pinch as a
+  // wheel event with ctrlKey) → smooth preview zoom, committed when the
+  // gesture pauses.
+  stage.addEventListener('wheel', (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    const factor = Math.exp(-e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.0025));
+    previewZoom(clampZoom(previewTarget() * factor), e.clientX, e.clientY);
+  }, { passive: false });
+
+  // Safari desktop pinch (gesture events) — prevent page zoom, use ours.
+  let gestureStart = 1;
+  stage.addEventListener('gesturestart', (e) => { e.preventDefault(); gestureStart = previewTarget(); }, { passive: false });
+  stage.addEventListener('gesturechange', (e) => { e.preventDefault(); previewZoom(clampZoom(gestureStart * e.scale), e.clientX, e.clientY); }, { passive: false });
+  stage.addEventListener('gestureend', (e) => { e.preventDefault(); commitPreview(); }, { passive: false });
+
+  // Touch pinch (phones / tablets).
+  let pinch = null;
+  stage.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      pinch = { d: touchDist(e), z: previewTarget(), cx: (e.touches[0].clientX + e.touches[1].clientX) / 2, cy: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
+    }
+  }, { passive: true });
+  stage.addEventListener('touchmove', (e) => {
+    if (!pinch || e.touches.length !== 2) return;
+    e.preventDefault();
+    const d = touchDist(e);
+    previewZoom(clampZoom(pinch.z * (d / pinch.d)), pinch.cx, pinch.cy);
+  }, { passive: false });
+  const endPinch = () => { if (pinch) { pinch = null; commitPreview(); } };
+  stage.addEventListener('touchend', endPinch, { passive: true });
+  stage.addEventListener('touchcancel', endPinch, { passive: true });
+}
+function touchDist(e) {
+  const dx = e.touches[0].clientX - e.touches[1].clientX, dy = e.touches[0].clientY - e.touches[1].clientY;
+  return Math.hypot(dx, dy) || 1;
 }
 
-function setZoom(z) {
-  state.zoom = Math.max(0.5, Math.min(4, z));
-  const anchor = state.cur;
+/* ---------------- zoom ---------------- */
+const ZOOM_MIN = 0.4, ZOOM_MAX = 5;
+function clampZoom(z) { return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z)); }
+function updateZoomLabel() {
+  const el = document.getElementById('zlabel');
+  if (el) el.textContent = Math.round(state.zoom * 100) + ' %';
+  const zin = document.getElementById('zin'), zout = document.getElementById('zout');
+  if (zin) zin.disabled = state.zoom >= ZOOM_MAX - 1e-6;
+  if (zout) zout.disabled = state.zoom <= ZOOM_MIN + 1e-6;
+}
+
+// Preview zoom: scale the already-rendered pages with a CSS transform during a
+// continuous gesture (cheap), then commit with a real re-render when it ends.
+const preview = { z: null, timer: 0, ax: 0, ay: 0 };
+function previewTarget() { return preview.z == null ? state.zoom : preview.z; }
+function previewZoom(z, clientX, clientY) {
+  preview.z = z;
+  preview.ax = clientX; preview.ay = clientY;
+  const k = z / state.zoom;
+  // keep the point under the cursor/fingers fixed
+  const sr = stage.getBoundingClientRect();
+  const px = (clientX == null ? sr.width / 2 : clientX - sr.left), py = (clientY == null ? sr.height / 2 : clientY - sr.top);
+  if (!preview.origin) preview.origin = { sx: stage.scrollLeft, sy: stage.scrollTop, px, py };
+  pagesEl.style.transformOrigin = '0 0';
+  pagesEl.style.transform = 'scale(' + k + ')';
+  // pages block is centered via margin:auto; transform ignores that, so nudge
+  const docW = pagesEl.offsetWidth * k;
+  const shift = Math.max(0, (stage.clientWidth - docW) / 2) - Math.max(0, (stage.clientWidth - pagesEl.offsetWidth) / 2);
+  pagesEl.style.marginLeft = (shift > 0 ? shift : 0) + 'px';
+  stage.scrollTop = (preview.origin.sy + preview.origin.py) * k - py;
+  stage.scrollLeft = (preview.origin.sx + preview.origin.px) * k - px;
+  const el = document.getElementById('zlabel'); if (el) el.textContent = Math.round(z * 100) + ' %';
+  clearTimeout(preview.timer); preview.timer = setTimeout(commitPreview, 180);
+}
+function commitPreview() {
+  clearTimeout(preview.timer); preview.timer = 0;
+  if (preview.z == null) return;
+  const z = preview.z, ax = preview.ax, ay = preview.ay;
+  preview.z = null; preview.origin = null;
+  pagesEl.style.transform = ''; pagesEl.style.marginLeft = '';
+  setZoom(z, { anchorX: ax, anchorY: ay, fromPreview: true });
+}
+
+/* setZoom: re-lay out at a new zoom while keeping the document point that was
+ * under the anchor (default: viewport centre) in place — no jump to page top. */
+function setZoom(z, opts = {}) {
+  const prevZoom = state.zoom;
+  const newZoom = clampZoom(z);
+  const sr = stage.getBoundingClientRect();
+  const ax = opts.anchorX == null ? sr.width / 2 : opts.anchorX - sr.left;
+  const ay = opts.anchorY == null ? sr.height * 0.35 : opts.anchorY - sr.top;
+  // document-space fractions of the anchor (before)
+  const prevW = pagesEl.offsetWidth || 1, prevH = pagesEl.scrollHeight || 1;
+  let fx = (stage.scrollLeft + ax) / prevW, fy = (stage.scrollTop + ay) / prevH;
+  if (opts.fromPreview) {
+    // the preview already moved scrollTop/Left to the new geometry (scaled by k)
+    const k = newZoom / prevZoom;
+    fx = (stage.scrollLeft + ax) / (prevW * k); fy = (stage.scrollTop + ay) / (prevH * k);
+  }
+  state.zoom = newZoom;
   relayoutRerender();
-  requestAnimationFrame(() => goToPage(anchor));
+  updateZoomLabel();
+  if (opts.keepView === false) return;
+  const newW = pagesEl.offsetWidth || 1, newH = pagesEl.scrollHeight || 1;
+  stage.scrollTop = fy * newH - ay;
+  stage.scrollLeft = fx * newW - ax;
+  updateCur();
 }
 
 /* ---------------- boot comment + auth layers ---------------- */
