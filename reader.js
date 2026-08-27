@@ -78,7 +78,8 @@ Reader.ready = boot();
 async function boot() {
   try {
     const task = pdfjsLib.getDocument({
-      url: CFG.pdfUrl || './thesis.pdf',
+      // ?v=<build> busts the GitHub Pages / browser cache on every publish
+      url: (CFG.pdfUrl || './thesis.pdf') + (CFG.buildVersion && CFG.buildVersion !== 'dev' ? '?v=' + encodeURIComponent(CFG.buildVersion) : ''),
       cMapUrl, cMapPacked: true, standardFontDataUrl,
       disableAutoFetch: true, disableStream: false,
     });
