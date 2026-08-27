@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+<title>Tapio Pitkäranta — Väitöskirja</title>
+<meta name="description" content="Tapio Pitkärannan väitöskirja selattavana. Voit valita tekstiä ja jättää kommentin." />
+<link rel="preconnect" href="https://accounts.google.com" />
+<link rel="stylesheet" href="./reader.css" />
+<script src="./config.js"></script>
+</head>
+<body>
+
+<div id="bar">
+  <div class="title" id="barTitle">Tapio Pitkäranta — Väitöskirja</div>
+  <div class="grp">
+    <button class="btn" id="prev" title="Edellinen sivu">‹</button>
+    <input id="pageInput" value="1" inputmode="numeric" aria-label="Sivu" />
+    <span id="pageTotal">/ …</span>
+    <button class="btn" id="next" title="Seuraava sivu">›</button>
+  </div>
+  <div class="grp hide-sm">
+    <button class="btn" id="zout" title="Loitonna">−</button>
+    <button class="btn" id="zfit" title="Sovita leveyteen">⤢</button>
+    <button class="btn" id="zin" title="Lähennä">+</button>
+  </div>
+  <button class="btn primary" id="cmtPage" title="Kommentoi nykyistä sivua">💬 Kommentoi sivua</button>
+  <div id="who" style="display:none"></div>
+  <div id="gbtn"></div>
+</div>
+
+<div id="stage">
+  <div id="pages"></div>
+  <div id="loading"><div class="bar"><i></i></div><div>Ladataan väitöskirjaa…</div></div>
+</div>
+
+<!-- floating "add comment on selection" button -->
+<button id="fab" title="Kommentoi valittua kohtaa">💬 Kommentoi</button>
+
+<!-- comment composer -->
+<div id="composer" role="dialog" aria-modal="false" aria-label="Kommentti">
+  <h3 id="cmtCtx">Kommentti</h3>
+  <div class="quote" id="cmtQuote" style="display:none"></div>
+  <div id="cmtSigninNote" class="signin-note" style="display:none">
+    Kirjaudu sisään Google-tilillä (oikea yläkulma) jättääksesi kommentin, jotta tiedän keneltä palaute tulee.
+  </div>
+  <div class="row">
+    <select id="cmtCat" aria-label="Kommentin tyyppi">
+      <option value="general">Yleinen huomio</option>
+      <option value="typo">Kirjoitus-/kielivirhe</option>
+      <option value="content">Sisältö / argumentti</option>
+      <option value="question">Kysymys</option>
+      <option value="suggestion">Ehdotus</option>
+    </select>
+    <button class="iconbtn" id="cmtMic" type="button" title="Sanele kommentti">🎤 Sanele</button>
+    <button class="iconbtn" id="cmtRec" type="button" title="Äänitä kommentti">● Äänitä</button>
+    <span id="dictindicator">● kuuntelee…</span>
+  </div>
+  <textarea id="cmtText" placeholder="Kirjoita tai sanele kommenttisi tähän…"></textarea>
+  <div class="row end">
+    <span class="hint" style="margin-right:auto">Kommentit tulevat vain minulle, eivät näy julkisesti.</span>
+    <button class="cancel" id="cmtCancel" type="button">Peruuta</button>
+    <button class="send" id="cmtSend" type="button">Lähetä</button>
+  </div>
+</div>
+
+<div id="toast">&nbsp;</div>
+
+<script type="module" src="./reader.js"></script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+/* PhD public reader — styles. Framework-free. Light/dark aware. */
+:root{
+  --bg:#f4f5f7; --stage:#e7e9ee; --panel:#ffffff; --ink:#1c2330; --muted:#5b6473;
+  --line:#d7dbe3; --accent:#4f46e5; --accent-ink:#ffffff;
+  --hl:rgba(255,214,10,.38); --hl-mine:rgba(79,70,229,.22); --hl-mine-line:#4f46e5;
+  --shadow:0 8px 30px rgba(20,25,40,.18); --ok:#0f9d58; --warn:#c0392b;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#12151b; --stage:#0c0e13; --panel:#1b1f28; --ink:#e8eaf0; --muted:#98a1b3;
+    --line:#2b313d; --accent:#8b83ff; --accent-ink:#0c0e13;
+    --hl:rgba(255,214,10,.30); --hl-mine:rgba(139,131,255,.26); --hl-mine-line:#8b83ff;
+    --shadow:0 10px 34px rgba(0,0,0,.55);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12151b; --stage:#0c0e13; --panel:#1b1f28; --ink:#e8eaf0; --muted:#98a1b3;
+  --line:#2b313d; --accent:#8b83ff; --accent-ink:#0c0e13;
+  --hl:rgba(255,214,10,.30); --hl-mine:rgba(139,131,255,.26); --hl-mine-line:#8b83ff;
+  --shadow:0 10px 34px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+button{font:inherit; cursor:pointer}
+
+/* ---- Top bar ---- */
+#bar{
+  flex:0 0 auto; display:flex; align-items:center; gap:10px; padding:8px 12px;
+  background:var(--panel); border-bottom:1px solid var(--line); z-index:40;
+  box-shadow:0 1px 0 rgba(0,0,0,.03);
+}
+#bar .title{font-weight:600; font-size:14px; margin-right:auto; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; max-width:38vw}
+#bar .grp{display:flex; align-items:center; gap:4px}
+#bar .btn{
+  border:1px solid var(--line); background:transparent; color:var(--ink);
+  border-radius:8px; padding:6px 10px; line-height:1; font-size:13px;
+}
+#bar .btn:hover{border-color:var(--accent)}
+#bar .btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+#pageInput{width:52px; text-align:center; border:1px solid var(--line); border-radius:8px;
+  padding:6px 4px; background:transparent; color:var(--ink)}
+#pageTotal{color:var(--muted); font-size:13px}
+#who{font-size:13px; color:var(--muted); display:flex; align-items:center; gap:8px}
+#who img{width:22px; height:22px; border-radius:50%}
+@media(max-width:720px){ #bar .title{max-width:30vw} #bar .hide-sm{display:none} }
+
+/* ---- Stage / pages ---- */
+#stage{flex:1 1 auto; overflow:auto; background:var(--stage); position:relative}
+#pages{position:relative; margin:0 auto; width:max-content; padding:18px 0}
+.page{
+  position:relative; margin:0 auto 16px; background:#fff; box-shadow:var(--shadow);
+}
+.page canvas{display:block}
+.page .textLayer{
+  position:absolute; inset:0; overflow:hidden; opacity:1; line-height:1;
+  z-index:2; --scale-factor:1;
+}
+.page .textLayer span,.page .textLayer br{
+  position:absolute; white-space:pre; cursor:text; transform-origin:0 0; color:transparent;
+}
+.page .textLayer ::selection{background:rgba(79,70,229,.32)}
+.page .hl{position:absolute; inset:0; z-index:1; pointer-events:none}
+.page .hl i{position:absolute; display:block; background:var(--hl); border-radius:2px}
+.page .hl i.mine{background:var(--hl-mine); box-shadow:inset 0 -2px 0 var(--hl-mine-line); pointer-events:auto; cursor:pointer}
+.page .linklayer{position:absolute; inset:0; z-index:3}
+.page .linklayer a{position:absolute; display:block}
+
+/* ---- Floating "add comment" button near a selection ---- */
+#fab{
+  position:fixed; z-index:60; display:none; align-items:center; gap:6px;
+  background:var(--accent); color:var(--accent-ink); border:none; border-radius:999px;
+  padding:8px 12px; box-shadow:var(--shadow); font-size:13px; font-weight:600;
+  transform:translate(-50%,-120%);
+}
+#fab.show{display:inline-flex}
+
+/* ---- Composer popover ---- */
+#composer{
+  position:fixed; z-index:80; width:min(420px,92vw); background:var(--panel);
+  border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow);
+  padding:14px; display:none; flex-direction:column; gap:10px;
+}
+#composer.show{display:flex}
+#composer h3{margin:0; font-size:14px}
+#composer .quote{
+  font-size:13px; color:var(--muted); border-left:3px solid var(--accent);
+  padding:4px 0 4px 10px; max-height:88px; overflow:auto; white-space:pre-wrap;
+}
+#composer .ctxline{font-size:12px; color:var(--muted)}
+#composer select,#composer textarea{
+  width:100%; border:1px solid var(--line); border-radius:10px; background:transparent;
+  color:var(--ink); padding:9px 10px; font:inherit; resize:vertical;
+}
+#composer textarea{min-height:96px}
+#composer .row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+#composer .row.end{justify-content:flex-end}
+#composer .iconbtn{
+  border:1px solid var(--line); background:transparent; color:var(--ink);
+  border-radius:10px; padding:8px 10px; font-size:13px; display:inline-flex; align-items:center; gap:6px;
+}
+#composer .iconbtn.active{background:var(--warn); color:#fff; border-color:var(--warn)}
+#composer .iconbtn[disabled]{opacity:.45; cursor:not-allowed}
+#composer .send{background:var(--accent); color:var(--accent-ink); border:none; border-radius:10px; padding:9px 16px; font-weight:600}
+#composer .cancel{background:transparent; border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:9px 14px}
+#composer .hint{font-size:12px; color:var(--muted)}
+#composer .signin-note{font-size:13px; background:rgba(79,70,229,.08); border:1px solid var(--line);
+  border-radius:10px; padding:10px; color:var(--ink)}
+#dictindicator{font-size:12px; color:var(--warn); display:none}
+#dictindicator.show{display:inline}
+
+/* ---- Toast ---- */
+#toast{
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+  background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:10px;
+  box-shadow:var(--shadow); font-size:13px; opacity:0; transition:.25s; z-index:100; pointer-events:none;
+}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+#toast.err{background:var(--warn); color:#fff}
+
+/* ---- Loading overlay ---- */
+#loading{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:12px; background:var(--stage); z-index:30; color:var(--muted)}
+#loading .bar{width:min(320px,60vw); height:6px; background:var(--line); border-radius:3px; overflow:hidden}
+#loading .bar i{display:block; height:100%; width:0; background:var(--accent); transition:width .2s}
+#loading.hide{display:none}
+
+/* GIS button host */
+#gbtn{min-width:120px}
