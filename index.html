@@ -6,8 +6,8 @@
 <title>Tapio Pitkäranta — Väitöskirja</title>
 <meta name="description" content="Tapio Pitkärannan väitöskirja selattavana. Voit valita tekstiä ja jättää kommentin." />
 <link rel="preconnect" href="https://accounts.google.com" />
-<link rel="stylesheet" href="./reader.css?v=20260827-1806" />
-<script src="./config.js?v=20260827-1806"></script>
+<link rel="stylesheet" href="./reader.css?v=20260827-1813" />
+<script src="./config.js?v=20260827-1813"></script>
 </head>
 <body>
 
@@ -25,9 +25,22 @@
     <button class="btn zlabel" id="zfit" title="Sovita leveyteen (⌘/Ctrl 0)"><span id="zlabel">100 %</span></button>
     <button class="btn" id="zin" title="Lähennä (⌘/Ctrl +)">+</button>
   </div>
+  <button class="btn" id="srchBtn" title="Hae tekstistä (⌘/Ctrl F)">🔍</button>
   <button class="btn primary" id="cmtPage" title="Kommentoi nykyistä sivua">💬 Kommentoi sivua</button>
   <div id="who" style="display:none"></div>
   <div id="gbtn"></div>
+</div>
+
+<!-- full-text search panel -->
+<div id="search" role="search" aria-label="Haku">
+  <div class="row">
+    <input id="srchInput" type="search" placeholder="Hae väitöskirjasta…" autocomplete="off" spellcheck="false" aria-label="Hakusana" />
+    <span id="srchCount" aria-live="polite"></span>
+    <button class="btn" id="srchPrev" title="Edellinen osuma (Shift+Enter)">▲</button>
+    <button class="btn" id="srchNext" title="Seuraava osuma (Enter)">▼</button>
+    <button class="btn" id="srchClose" title="Sulje (Esc)">✕</button>
+  </div>
+  <div id="srchList"></div>
 </div>
 
 <div id="stage">
@@ -67,6 +80,6 @@
 
 <div id="toast">&nbsp;</div>
 
-<script type="module" src="./reader.js?v=20260827-1806"></script>
+<script type="module" src="./reader.js?v=20260827-1813"></script>
 </body>
 </html>

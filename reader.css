@@ -76,6 +76,8 @@ button{font:inherit; cursor:pointer}
 .page .textLayer ::selection{background:rgba(79,70,229,.32)}
 .page .hl{position:absolute; inset:0; z-index:1; pointer-events:none}
 .page .hl i{position:absolute; display:block; background:var(--hl); border-radius:2px}
+.page .hl i.srch{background:rgba(255,196,0,.45); box-shadow:0 0 0 1px rgba(200,140,0,.35); border-radius:2px}
+.page .hl i.srch.cur{background:rgba(255,120,0,.55); box-shadow:0 0 0 2px rgba(220,90,0,.7)}
 .page .hl i.mine{background:var(--hl-mine); box-shadow:inset 0 -2px 0 var(--hl-mine-line); pointer-events:auto; cursor:pointer}
 .page .linklayer{position:absolute; inset:0; z-index:3}
 .page .linklayer a{position:absolute; display:block; border-radius:2px}
@@ -143,3 +145,30 @@ button{font:inherit; cursor:pointer}
 
 /* GIS button host */
 #gbtn{min-width:120px}
+
+/* ---- Full-text search panel ---- */
+#srchBtn.on{border-color:var(--accent); color:var(--accent)}
+#search{
+  display:none; flex:0 0 auto; flex-direction:column; background:var(--panel);
+  border-bottom:1px solid var(--line); z-index:35; max-height:38vh;
+}
+#search.show{display:flex}
+#search .row{display:flex; align-items:center; gap:6px; padding:6px 12px}
+#search input{
+  flex:1 1 auto; min-width:0; border:1px solid var(--line); border-radius:8px; padding:6px 10px;
+  background:transparent; color:var(--ink); font:inherit; font-size:14px;
+}
+#search input:focus{outline:none; border-color:var(--accent)}
+#srchCount{font-size:13px; color:var(--muted); white-space:nowrap; min-width:56px; text-align:right; font-variant-numeric:tabular-nums}
+#search .btn{border:1px solid var(--line); background:transparent; color:var(--ink); border-radius:8px; padding:6px 9px; line-height:1; font-size:12px}
+#search .btn:hover{border-color:var(--accent)}
+#srchList{overflow:auto; border-top:1px solid var(--line); font-size:13px}
+#srchList:empty{display:none}
+.srchItem{display:flex; gap:10px; padding:5px 12px; cursor:pointer; border-bottom:1px solid var(--line); align-items:baseline}
+.srchItem:hover{background:rgba(79,70,229,.06)}
+.srchItem.cur{background:rgba(79,70,229,.12)}
+.srchItem .pg{flex:0 0 46px; color:var(--muted); font-variant-numeric:tabular-nums}
+.srchItem .tx{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--ink)}
+.srchItem mark{background:rgba(255,196,0,.5); color:inherit; border-radius:2px; padding:0 1px}
+.srchMore{padding:6px 12px; color:var(--muted); font-size:12px}
+@media(max-width:720px){ #search{max-height:50vh} #srchCount{min-width:44px} .srchItem .pg{flex-basis:40px} }

@@ -55,6 +55,8 @@ const Reader = {
   goBack,
   setZoom,
   get zoom() { return state.zoom; },
+  get pdf() { return state.pdf; },
+  scrollToFraction,
   onPainted: (cb) => { state.paintedCbs.push(cb); },
   // page number a DOM node lives in (walk up to the .page element), or 0
   pageOfNode(node) {
@@ -291,6 +293,17 @@ async function goToDest(dest) {
   history.replaceState(null, '', '#p=' + d.page);
 }
 
+/* Scroll so that the point at page fraction fy (0 = top of page n) sits ~1/3
+ * down the viewport. Used by search results. */
+function scrollToFraction(n, fy, behavior = 'smooth') {
+  const rec = state.recs.get(n); if (!rec) return;
+  render(n);
+  const y = rec.el.offsetTop + (rec.el.offsetHeight || state.base.h * state.scale) * (fy || 0);
+  stage.scrollTo({ top: Math.max(0, y - stage.clientHeight / 3), behavior });
+  state.cur = n; pageInput.value = String(n);
+  history.replaceState(null, '', '#p=' + n);
+}
+
 function pushBack() {
   state.back.push({ top: stage.scrollTop, left: stage.scrollLeft, zoom: state.zoom });
   if (state.back.length > 50) state.back.shift();
@@ -504,5 +517,7 @@ function setZoom(z, opts = {}) {
 }
 
 /* ---------------- boot comment + auth layers ---------------- */
-import('./auth.js').then((m) => m.initAuth(CFG)).catch((e) => console.warn('auth init', e));
-import('./comments.js').then((m) => m.initComments(Reader, CFG)).catch((e) => console.warn('comments init', e));
+const V = CFG.buildVersion && CFG.buildVersion !== 'dev' ? '?v=' + encodeURIComponent(CFG.buildVersion) : '';
+import('./auth.js' + V).then((m) => m.initAuth(CFG)).catch((e) => console.warn('auth init', e));
+import('./comments.js' + V).then((m) => m.initComments(Reader, CFG)).catch((e) => console.warn('comments init', e));
+import('./search.js' + V).then((m) => { Reader.search = m.initSearch(Reader); }).catch((e) => console.warn('search init', e));
