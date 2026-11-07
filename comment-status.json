@@ -1,0 +1,119 @@
+{
+ "generated": "2026-11-07 20:53",
+ "items": {
+  "17247": {
+   "s": "applied",
+   "t": "",
+   "r": "backfill-2026-11-07",
+   "c": "3abc62a"
+  },
+  "23768": {
+   "s": "applied",
+   "t": "\"harva\" mistranslated in the Finnish abstract",
+   "r": "2026-11-07_1139",
+   "c": "3abc62a"
+  },
+  "23774": {
+   "s": "applied",
+   "t": "\"grouper-emulointi\" in the Finnish abstract",
+   "r": "2026-11-07_1144",
+   "c": "dfadad1"
+  },
+  "23779": {
+   "s": "applied",
+   "t": "overly complex comparison sentence in the Finnish abstract",
+   "r": "2026-11-07_1144",
+   "c": "dfadad1"
+  },
+  "23784": {
+   "s": "needs-decision",
+   "t": "alignment \"less\" vs \"not only\" an open scientific question",
+   "r": "2026-11-07_1144",
+   "c": "dfadad1"
+  },
+  "23788": {
+   "s": "applied",
+   "t": "\"kehkeytymisen\"",
+   "r": "2026-11-07_1144",
+   "c": "dfadad1"
+  },
+  "23838": {
+   "s": "applied",
+   "t": "Acknowledgements: thank the family and children; thank father Juhani earlier",
+   "r": "2026-11-07_1157",
+   "c": "380bd82"
+  },
+  "23849": {
+   "s": "applied",
+   "t": "Acknowledgements: thank Kristiina Kahur",
+   "r": "2026-11-07_1203",
+   "c": "c194dea"
+  },
+  "23866": {
+   "s": "applied",
+   "t": "OLAP used without expansion at first mention",
+   "r": "2026-11-07_1412",
+   "c": "d86ef25"
+  },
+  "23907": {
+   "s": "applied",
+   "t": "Preface: AI's pace and reading the research period by period",
+   "r": "2026-11-07_1412",
+   "c": "d86ef25"
+  },
+  "23958": {
+   "s": "applied",
+   "t": "Figure 2 (Phase III at a glance): labels overflow their boxes",
+   "r": "2026-11-07_1442",
+   "c": "3189457"
+  },
+  "24046": {
+   "s": "applied",
+   "t": "Figure 18 (recommendation accuracy): replace Excel screenshots with vector charts",
+   "r": "2026-11-07_1600",
+   "c": "577c212"
+  },
+  "24058": {
+   "s": "applied",
+   "t": "\"The Structure of the Thesis\" skips Chapter 3",
+   "r": "2026-11-07_1600",
+   "c": "82af7b6"
+  },
+  "24091": {
+   "s": "applied",
+   "t": "Figure 19 (query execution time): vector chart + number check",
+   "r": "2026-11-07_1612",
+   "c": "71e4e0c"
+  },
+  "24139": {
+   "s": "applied",
+   "t": "Figure 27 (grammar-check workflows) as vector graphics",
+   "r": "2026-11-07_1632",
+   "c": "0884c43"
+  },
+  "24287": {
+   "s": "applied",
+   "t": "Acknowledgments: PCSI best paper award 2025 and keynote invitation 2027",
+   "r": "2026-11-07_2037",
+   "c": "9455640"
+  },
+  "4376": {
+   "s": "superseded",
+   "t": "",
+   "r": "backfill-2026-11-07",
+   "c": "3abc62a"
+  },
+  "4377": {
+   "s": "superseded",
+   "t": "",
+   "r": "backfill-2026-11-07",
+   "c": "3abc62a"
+  },
+  "6138": {
+   "s": "applied",
+   "t": "",
+   "r": "backfill-2026-11-07",
+   "c": "3abc62a"
+  }
+ }
+}

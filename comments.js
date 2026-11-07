@@ -320,7 +320,7 @@ function buildExtra(message, category, audioUrl) {
     page: sel ? sel.page : R.currentPage(),
     category,
     message,
-    v: CFG.buildVersion || 'dev',
+    v: CFG.pdfVersion || CFG.buildVersion || 'dev',
     url: location.origin + location.pathname + '#p=' + (sel ? sel.page : R.currentPage()),
   };
   if (audioUrl) base.audioUrl = audioUrl;
@@ -340,14 +340,18 @@ function buildExtra(message, category, audioUrl) {
 function loadMine() { try { return JSON.parse(localStorage.getItem(LS_MINE) || '[]'); } catch (_) { return []; } }
 function saveMine(extra) {
   const all = loadMine();
-  all.push({ page: extra.page, quote: extra.quote || '', rects: extra.rects || [], message: extra.message, kind: extra.kind, t: Date.now() });
+  all.push({ page: extra.page, quote: extra.quote || '', rects: extra.rects || [], message: extra.message, kind: extra.kind, v: extra.v, t: Date.now() });
   try { localStorage.setItem(LS_MINE, JSON.stringify(all.slice(-500))); } catch (_) {}
 }
 function paintMine(n, hl) {
   if (!hl) return;
   // clear previously painted mine markers, keep nothing else (hl is ours)
   hl.querySelectorAll('i.mine').forEach((x) => x.remove());
-  const mine = loadMine().filter((c) => c.page === n && c.rects && c.rects.length);
+  // Only notes left on THIS build: after a republish the text may have moved,
+  // and an old rectangle would point at the wrong words (the owner view
+  // re-anchors comments by their quote instead).
+  const cur = CFG.pdfVersion || CFG.buildVersion || 'dev';
+  const mine = loadMine().filter((c) => c.page === n && c.v === cur && c.rects && c.rects.length);
   for (const c of mine) {
     for (const r of c.rects) {
       const i = document.createElement('i');

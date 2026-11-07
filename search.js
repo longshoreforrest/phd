@@ -221,5 +221,35 @@ export function initSearch(R) {
   const m = /(?:^|[#&])q=([^&]+)/.exec(location.hash);
   if (m) { R.ready.then(() => { ui.show(); ui.input.value = decodeURIComponent(m[1]); run(ui.input.value); }); }
 
-  return { search: (q) => { ui.show(); ui.input.value = q; return run(q); }, next: () => go(st.cur + 1), prev: () => go(st.cur - 1), get matches() { return st.matches; } };
+  /* ---------- re-anchoring for comments left on an older build ----------
+   * locate(quote, nearPage) finds the quote in the CURRENT text (same
+   * whitespace/hyphenation-tolerant matching as search), preferring the page
+   * closest to where the comment was left. Long quotes are matched on their
+   * first ~12 words (enough to be unique, robust to edits further on).
+   * Returns { page, rects:[{x,y,w,h}] } in page fractions, or null.
+   */
+  async function locate(quote, nearPage, maxDist = 12) {
+    const q = norm(String(quote || '')).replace(/\s+/g, ' ').trim();
+    if (q.length < 3) return null;
+    const words = q.split(' ');
+    const probe = words.length > 12 ? words.slice(0, 12) : words;
+    const re = new RegExp(probe.map(escapeRe).join('[\\s-]*'));
+    const pages = await buildIndex();
+    const order = [nearPage];
+    for (let d = 1; d <= maxDist; d++) order.push(nearPage - d, nearPage + d);
+    for (const p of order) {
+      const pg = pages[p - 1]; if (!pg || !pg.norm) continue;
+      const m = re.exec(pg.norm); if (!m) continue;
+      let end = m.index + m[0].length;
+      if (probe.length < words.length) {          // extend to the full quote if it still matches
+        const full = new RegExp(words.map(escapeRe).join('[\\s-]*'));
+        const mf = full.exec(pg.norm.slice(m.index));
+        if (mf && mf.index === 0) end = m.index + mf[0].length;
+      }
+      return { page: p, rects: rectsFor(pg, m.index, end).map((r) => ({ x: r.fx, y: r.fy, w: r.fw, h: r.fh })) };
+    }
+    return null;
+  }
+
+  return { search: (q) => { ui.show(); ui.input.value = q; return run(q); }, next: () => go(st.cur + 1), prev: () => go(st.cur - 1), get matches() { return st.matches; }, locate };
 }
