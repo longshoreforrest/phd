@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-07 23:00",
+ "generated": "2026-11-07 23:23",
  "items": {
   "17247": {
    "s": "applied",
@@ -26,10 +26,10 @@
    "c": "dfadad1"
   },
   "23784": {
-   "s": "needs-decision",
+   "s": "applied",
    "t": "alignment \"less\" vs \"not only\" an open scientific question",
-   "r": "2026-11-07_1144",
-   "c": "dfadad1"
+   "r": "2026-11-07_2321",
+   "c": "2d73b37"
   },
   "23788": {
    "s": "applied",
@@ -96,6 +96,12 @@
    "t": "Acknowledgments: PCSI best paper award 2025 and keynote invitation 2027",
    "r": "2026-11-07_2037",
    "c": "9455640"
+  },
+  "24406": {
+   "s": "applied",
+   "t": "NordDRG benchmark Future work: add the coding-agent track",
+   "r": "2026-11-07_2314",
+   "c": "82d7ecb"
   },
   "4376": {
    "s": "superseded",
