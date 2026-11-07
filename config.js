@@ -47,5 +47,5 @@ window.PHD_VIEWER_CONFIG = {
   audioEndpoint: '',
 
   // Local build/version stamp (publish script overwrites this).
-  buildVersion: '20261107-2003',
+  buildVersion: '20261107-2023',
 };
