@@ -46,9 +46,13 @@ function wireSelection() {
   };
   document.addEventListener('mouseup', () => setTimeout(update, 0));
   document.addEventListener('touchend', () => setTimeout(update, 0), { passive: true });
+  // selectionchange also drives the FAB (touch devices: long-press + handles
+  // never fire mouseup, and iOS often swallows touchend after a selection).
+  let selT = 0;
   document.addEventListener('selectionchange', () => {
     const s = window.getSelection();
-    if (!s || s.isCollapsed) hideFab();
+    if (!s || s.isCollapsed) { hideFab(); return; }
+    clearTimeout(selT); selT = setTimeout(update, 250);
   });
   fab.addEventListener('mousedown', (e) => e.preventDefault()); // keep selection
   fab.addEventListener('click', () => { captureSelection(); openComposer('selection'); });
@@ -83,7 +87,15 @@ const clamp = (v) => Math.max(0, Math.min(1, v));
 /* ---------------- page-level comment ---------------- */
 function wirePageButton() {
   const b = document.getElementById('cmtPage');
-  if (b) b.onclick = () => { sel = { kind: 'page', page: R.currentPage(), quote: '', rects: [] }; openComposer('page'); };
+  if (b) b.onclick = () => {
+    // If text is painted, comment that text instead of the whole page.
+    const s = window.getSelection();
+    if (s && !s.isCollapsed && s.toString().trim() && R.pageOfNode(s.anchorNode)) {
+      captureSelection(); openComposer('selection'); return;
+    }
+    sel = { kind: 'page', page: R.currentPage(), quote: '', rects: [] }; openComposer('page');
+  };
+  wireHint();
 }
 
 /* ---------------- composer ---------------- */
@@ -297,4 +309,19 @@ function toast(msg, err) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.toggle('err', !!err); t.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3600);
+}
+
+/* ---------------- one-time hint: how to comment a word/sentence ---------------- */
+function wireHint() {
+  const KEY = 'phd:hint-select-dismissed';
+  try { if (localStorage.getItem(KEY)) return; } catch (_) {}
+  const touch = matchMedia('(pointer: coarse)').matches;
+  const h = document.createElement('div');
+  h.id = 'selHint';
+  h.innerHTML = '<span>✍️ <b>Kommentoi sanaa tai lausetta:</b> ' +
+    (touch ? 'paina tekstiä pitkään ja säädä valintaa' : 'maalaa teksti hiirellä') +
+    ' → paina <b>💬 Kommentoi</b>. Koko sivua voi kommentoida yläpalkin napista.</span>' +
+    '<button type="button" aria-label="Sulje">×</button>';
+  h.querySelector('button').onclick = () => { h.remove(); try { localStorage.setItem(KEY, '1'); } catch (_) {} };
+  document.body.appendChild(h);
 }
