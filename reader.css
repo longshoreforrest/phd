@@ -76,6 +76,7 @@ button{font:inherit; cursor:pointer}
 .page .textLayer ::selection{background:rgba(79,70,229,.32)}
 .page .hl{position:absolute; inset:0; z-index:1; pointer-events:none}
 .page .hl i{position:absolute; display:block; background:var(--hl); border-radius:2px}
+.page .hl i.areaDraft{background:rgba(79,70,229,.10); border:2px dashed var(--hl-mine-line); border-radius:3px}
 .page .hl i.srch{background:rgba(255,196,0,.45); box-shadow:0 0 0 1px rgba(200,140,0,.35); border-radius:2px}
 .page .hl i.srch.cur{background:rgba(255,120,0,.55); box-shadow:0 0 0 2px rgba(220,90,0,.7)}
 .page .hl i.other{background:rgba(255,140,0,.28); box-shadow:inset 0 -2px 0 #e8891a; pointer-events:auto; cursor:pointer; border-radius:2px}

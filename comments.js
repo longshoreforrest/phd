@@ -23,6 +23,7 @@ let mediaRec = null, chunks = [], audioBlob = null;
 export function initComments(reader, cfg) {
   R = reader; CFG = cfg || {};
   wireSelection();
+  wireArea();
   wireComposer();
   wirePageButton();
   R.onPainted((n, el, hl) => paintMine(n, hl));
@@ -84,6 +85,59 @@ function captureSelection() {
 }
 const clamp = (v) => Math.max(0, Math.min(1, v));
 
+/* ---------------- area comment: drag a box over a figure ----------------
+ * Raster figures (charts, screenshots) have no text layer, so text selection
+ * cannot anchor a comment there. A mouse drag that starts on a page and ends
+ * WITHOUT selecting any text draws a box; releasing it opens the composer with
+ * that box as the anchor (kind 'area', rects = [box]). Drags that do select
+ * text behave exactly as before (the box is discarded).
+ */
+function wireArea() {
+  if (matchMedia('(pointer: coarse)').matches) return;   // touch: long-press selects text
+  let start = null, draft = null;
+  const selText = () => { const s = window.getSelection(); return s && !s.isCollapsed ? s.toString().trim() : ''; };
+  const clear = () => { if (draft) draft.remove(); draft = null; };
+  document.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    const pageEl = e.target.closest && e.target.closest('.page');
+    if (!pageEl || e.target.closest('a, button, .textLayer span, .hl i.other, .hl .otherBadge')) { start = null; return; }
+    const n = R.pageOfNode(e.target);
+    if (!n) { start = null; return; }
+    clearAreaDraft();
+    start = { n, el: pageEl, x: e.clientX, y: e.clientY };
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!start || !(e.buttons & 1)) return;
+    if (selText()) { clear(); return; }                     // real text selection: stand aside
+    const w = Math.abs(e.clientX - start.x), h = Math.abs(e.clientY - start.y);
+    if (w < 8 && h < 8) return;
+    const hl = R.hlLayer(start.n); if (!hl) return;
+    if (!draft) { draft = document.createElement('i'); draft.className = 'areaDraft'; hl.appendChild(draft); }
+    const f = boxFrac(start.el, start.x, start.y, e.clientX, e.clientY);
+    Object.assign(draft.style, { left: f.x * 100 + '%', top: f.y * 100 + '%', width: f.w * 100 + '%', height: f.h * 100 + '%' });
+  });
+  document.addEventListener('mouseup', (e) => {
+    if (!start) return;
+    const st = start; start = null;
+    const w = Math.abs(e.clientX - st.x), h = Math.abs(e.clientY - st.y);
+    if (!draft || selText() || w < 14 || h < 14) { clear(); return; }
+    const f = boxFrac(st.el, st.x, st.y, e.clientX, e.clientY);
+    areaDraft = draft; draft = null;                         // stays visible while composing
+    window.getSelection()?.removeAllRanges();
+    sel = { kind: 'area', page: st.n, quote: '', rects: [{ x: +f.x.toFixed(4), y: +f.y.toFixed(4), w: +f.w.toFixed(4), h: +f.h.toFixed(4) }] };
+    hideFab();
+    openComposer('area');
+  });
+}
+let areaDraft = null;
+function clearAreaDraft() { if (areaDraft) areaDraft.remove(); areaDraft = null; }
+function boxFrac(pageEl, x1, y1, x2, y2) {
+  const pr = pageEl.getBoundingClientRect();
+  const l = clamp((Math.min(x1, x2) - pr.left) / pr.width), t = clamp((Math.min(y1, y2) - pr.top) / pr.height);
+  const r = clamp((Math.max(x1, x2) - pr.left) / pr.width), b = clamp((Math.max(y1, y2) - pr.top) / pr.height);
+  return { x: l, y: t, w: r - l, h: b - t };
+}
+
 /* ---------------- page-level comment ---------------- */
 function wirePageButton() {
   const b = document.getElementById('cmtPage');
@@ -117,7 +171,9 @@ function openComposer(kind) {
   if (kind === 'selection' && sel) q.textContent = '“' + (sel.quote.length > 300 ? sel.quote.slice(0, 300) + '…' : sel.quote) + '”';
   ctx.textContent = kind === 'selection'
     ? ('Kommentti — sivu ' + (sel ? sel.page : '?'))
-    : ('Kommentti koko sivusta ' + (sel ? sel.page : R.currentPage()));
+    : kind === 'area'
+      ? ('Kommentti merkitystä alueesta — sivu ' + (sel ? sel.page : '?'))
+      : ('Kommentti koko sivusta ' + (sel ? sel.page : R.currentPage()));
   document.getElementById('cmtText').value = '';
   audioBlob = null; updateRecUI(false);
   c.classList.add('show');
@@ -139,6 +195,7 @@ function closeComposer() {
   const c = document.getElementById('composer');
   if (c.classList.contains('show') && !composerSent) R.emit('comment_cancel', { page: sel ? sel.page : R.currentPage(), kind: sel ? sel.kind : 'page', typed: document.getElementById('cmtText').value.trim().length });
   c.classList.remove('show');
+  clearAreaDraft();
   sel = null;
 }
 
@@ -271,6 +328,7 @@ function buildExtra(message, category, audioUrl) {
     base.quote = sel.quote;
     base.rects = sel.rects;
   }
+  if (sel && sel.kind === 'area') base.rects = sel.rects;
   // Keep under the Worker's 4096-char extra cap: trim rects, then quote.
   let s = JSON.stringify(base);
   while (s.length > MAX_EXTRA && base.rects && base.rects.length) { base.rects = base.rects.slice(0, Math.floor(base.rects.length / 2)); s = JSON.stringify(base); }
@@ -313,14 +371,14 @@ function toast(msg, err) {
 
 /* ---------------- one-time hint: how to comment a word/sentence ---------------- */
 function wireHint() {
-  const KEY = 'phd:hint-select-dismissed';
+  const KEY = 'phd:hint-select-dismissed-v2';
   try { if (localStorage.getItem(KEY)) return; } catch (_) {}
   const touch = matchMedia('(pointer: coarse)').matches;
   const h = document.createElement('div');
   h.id = 'selHint';
   h.innerHTML = '<span>✍️ <b>Kommentoi sanaa tai lausetta:</b> ' +
     (touch ? 'paina tekstiä pitkään ja säädä valintaa' : 'maalaa teksti hiirellä') +
-    ' → paina <b>💬 Kommentoi</b>. Koko sivua voi kommentoida yläpalkin napista.</span>' +
+    ' → paina <b>💬 Kommentoi</b>.' + (touch ? '' : ' <b>Kuvaa</b> voit kommentoida vetämällä hiirellä laatikon sen päälle.') + ' Koko sivua voi kommentoida yläpalkin napista.</span>' +
     '<button type="button" aria-label="Sulje">×</button>';
   h.querySelector('button').onclick = () => { h.remove(); try { localStorage.setItem(KEY, '1'); } catch (_) {} };
   document.body.appendChild(h);
