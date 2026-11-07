@@ -533,8 +533,14 @@ function setZoom(z, opts = {}) {
 
 /* ---------------- boot comment + auth layers ---------------- */
 const V = CFG.buildVersion && CFG.buildVersion !== 'dev' ? '?v=' + encodeURIComponent(CFG.buildVersion) : '';
+if (CFG.defence) {
+  // Internal defence-prep mode: local only, nothing is sent anywhere.
+  import('./search.js').then((m) => { Reader.search = m.initSearch(Reader); }).catch((e) => console.warn('search init', e));
+  Reader.ready.then(() => import('./defence.js')).then((m) => m.initDefence(Reader)).catch((e) => console.warn('defence init', e));
+} else {
 import('./auth.js' + V).then((m) => m.initAuth(CFG)).catch((e) => console.warn('auth init', e));
 import('./comments.js' + V).then((m) => m.initComments(Reader, CFG)).catch((e) => console.warn('comments init', e));
 import('./search.js' + V).then((m) => { Reader.search = m.initSearch(Reader); }).catch((e) => console.warn('search init', e));
 import('./activity.js' + V).then((m) => m.initActivity(Reader, CFG)).catch((e) => console.warn('activity init', e));
 import('./owner.js' + V).then((m) => { Reader.owner = m.initOwner(Reader, CFG); }).catch((e) => console.warn('owner init', e));
+}

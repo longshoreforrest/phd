@@ -6,8 +6,16 @@
 <title>Tapio Pitkäranta — Väitöskirja</title>
 <meta name="description" content="Tapio Pitkärannan väitöskirja selattavana. Voit valita tekstiä ja jättää kommentin." />
 <link rel="preconnect" href="https://accounts.google.com" />
-<link rel="stylesheet" href="./reader.css?v=20260827-1923" />
-<script src="./config.js?v=20260827-1923"></script>
+<link rel="stylesheet" href="./reader.css?v=20261107-1126" />
+<script src="./config.js?v=20261107-1126"></script>
+<script>
+  // Internal defence-prep mode (?defence=1, local only): print build PDF, no
+  // analytics / comments / sign-in, plus the question layer (defence.js).
+  (function (c) { if (!c || !/[?&]defence=1\b/.test(location.search)) return;
+    c.defence = true; c.analytics = false; c.pdfUrl = './defence/thesis.pdf';
+    c.buildVersion = 'dev'; c.title = 'Defence prep'; c.initialHash = location.hash;
+  })(window.PHD_VIEWER_CONFIG);
+</script>
 <script>
   // MyPublicAnalytics beacon bootstrap (site='phd'). The beacon sends the
   // pageview; activity.js adds every reader action on top of it.
@@ -105,6 +113,6 @@
 
 <div id="toast">&nbsp;</div>
 
-<script type="module" src="./reader.js?v=20260827-1923"></script>
+<script type="module" src="./reader.js?v=20261107-1126"></script>
 </body>
 </html>
