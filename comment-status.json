@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-08 08:24",
+ "generated": "2026-11-08 09:15",
  "items": {
   "17247": {
    "s": "applied",
@@ -120,6 +120,30 @@
    "t": "English abstract slightly too long: header alone on its page",
    "r": "2026-11-08_0801",
    "c": "0f58a26"
+  },
+  "24556": {
+   "s": "applied",
+   "t": "Acknowledgments: new paragraph for the supervisor",
+   "r": "2026-11-08_0910",
+   "c": "18f85ca"
+  },
+  "24569": {
+   "s": "applied",
+   "t": "Acknowledgments: new paragraph at \"I also thank Kristiina Kahur\"",
+   "r": "2026-11-08_0910",
+   "c": "18f85ca"
+  },
+  "24587": {
+   "s": "applied",
+   "t": "CCL was published at PCSI 2025: remove \"original to this thesis\" (EN abstract and throughout)",
+   "r": "2026-11-08_0910",
+   "c": "18f85ca"
+  },
+  "24592": {
+   "s": "applied",
+   "t": "FI abstract: remove the CCL exception clause",
+   "r": "2026-11-08_0910",
+   "c": "18f85ca"
   },
   "4376": {
    "s": "superseded",
