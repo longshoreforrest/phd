@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-08 07:14",
+ "generated": "2026-11-08 08:24",
  "items": {
   "17247": {
    "s": "applied",
@@ -114,6 +114,12 @@
    "t": "Finnish abstract too long: extra blank page",
    "r": "2026-11-08_0607",
    "c": "a5056ff"
+  },
+  "24494": {
+   "s": "applied",
+   "t": "English abstract slightly too long: header alone on its page",
+   "r": "2026-11-08_0801",
+   "c": "0f58a26"
   },
   "4376": {
    "s": "superseded",
