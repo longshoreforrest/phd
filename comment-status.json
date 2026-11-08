@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-08 09:15",
+ "generated": "2026-11-08 12:22",
  "items": {
   "17247": {
    "s": "applied",
@@ -144,6 +144,12 @@
    "t": "FI abstract: remove the CCL exception clause",
    "r": "2026-11-08_0910",
    "c": "18f85ca"
+  },
+  "24657": {
+   "s": "applied",
+   "t": "Preface \"Use of AI tools\": also used for the Phase III software demonstrators",
+   "r": "2026-11-08_1003",
+   "c": "dbd4743"
   },
   "4376": {
    "s": "superseded",
