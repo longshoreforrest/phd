@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-08 01:44",
+ "generated": "2026-11-08 07:14",
  "items": {
   "17247": {
    "s": "applied",
@@ -102,6 +102,18 @@
    "t": "NordDRG benchmark Future work: add the coding-agent track",
    "r": "2026-11-07_2314",
    "c": "82d7ecb"
+  },
+  "24440": {
+   "s": "superseded",
+   "t": "A5 role cell: remove the \"eight projects\" participant-observation claim",
+   "r": "2026-11-08_0607",
+   "c": "a5056ff"
+  },
+  "24471": {
+   "s": "applied",
+   "t": "Finnish abstract too long: extra blank page",
+   "r": "2026-11-08_0607",
+   "c": "a5056ff"
   },
   "4376": {
    "s": "superseded",
