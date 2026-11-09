@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-08 15:42",
+ "generated": "2026-11-09 20:18",
  "items": {
   "17247": {
    "s": "applied",
@@ -150,6 +150,12 @@
    "t": "Preface \"Use of AI tools\": also used for the Phase III software demonstrators",
    "r": "2026-11-08_1003",
    "c": "dbd4743"
+  },
+  "24694": {
+   "s": "needs-decision",
+   "t": "should Tables 4 and 5 stay in the main text?",
+   "r": "2026-11-08_1559",
+   "c": "72b1fad"
   },
   "4376": {
    "s": "superseded",
