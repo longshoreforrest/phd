@@ -47,7 +47,7 @@ window.PHD_VIEWER_CONFIG = {
   audioEndpoint: '',
 
   // Local build/version stamp (publish script overwrites this).
-  buildVersion: '20261109-2018',
+  buildVersion: '20261110-2017',
   // Identity of the PDF content; comments are anchored to it (publish keeps it when thesis.pdf is unchanged).
-  pdfVersion: '20261109-2018',
+  pdfVersion: '20261110-2017',
 };
