@@ -42,9 +42,9 @@ window.PHD_VIEWER_CONFIG = {
   dictationLang: 'fi-FI',         // Web Speech API dictation language
 
   // ---- Phase 2: real audio recording ----
-  // Leave '' to keep audio OFF (dictation-to-text still works). Set to the
-  // deployed phd-audio Worker URL to enable MediaRecorder capture + upload.
-  audioEndpoint: '',
+  // MyPA stores recordings in KV (POST /audio → {url}) and attaches them to the
+  // Telegram notification (@TapioPhDBot). '' turns recording OFF (dictation still works).
+  audioEndpoint: 'https://mypa.longshoreforrest.workers.dev/audio',
 
   // Local build/version stamp (publish script overwrites this).
   buildVersion: '20261111-1934',
